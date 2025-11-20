@@ -262,7 +262,7 @@ out_rng -1 4
 test(example13, [1, 2, 3, 4, 5])
 
 if __name__ == "__main__":
-    code = asm_to_brainfuck(example11)
+    code = asm_to_brainfuck(example12)
     print(code)
     result = run_brainfuck(code)
     print(result)
