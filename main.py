@@ -4,13 +4,26 @@ example1 = ',+.+.+.'
 
 def ptr(offset: int):
     if offset > 0:
-        return '>' * offset + f" # ptr {offset}\n"
-    return '<' * (-offset) + f" # ptr _{-offset}\n"
+        return '>' * offset # + f" # ptr {offset}\n"
+    return '<' * (-offset) # + f" # ptr _{-offset}\n"
 
 def mov(offset: int):
     if offset > 0:
         return f'[-{">"*offset}+{"<"*offset}] # mov {offset}\n'
     return f'[-{"<"*(-offset)}+{">"*(-offset)}] # mov _{-offset}\n'
+
+def add(b_off: int, e_off: int):
+    return (f'\n# add {b_off} {e_off}\n{mov(e_off)}{ptr(e_off)}' +
+             f'[\n\t-\n\t{ptr(b_off - e_off)}\t+\n\t{ptr(-b_off)}\t+\n\t{ptr(e_off)}]' +
+             f'\n{ptr(-e_off)}\n')
+
+def sub(b_off: int, e_off: int):
+    return (f'\n# sub {b_off} {e_off}\n{mov(e_off)}{ptr(e_off)}' +
+            f'[\n\t-\n\t{ptr(b_off - e_off)}\t-\n\t{ptr(-b_off)}\t+\n\t{ptr(e_off)}]' +
+            f'\n{ptr(-e_off)}\n')
+
+def not_op():
+    return '# not\n>+< [>->]>[>>]<< <'
 
 def asm_to_brainfuck(asm: str, output_file=None) -> str:
     code = ""
@@ -35,16 +48,19 @@ def asm_to_brainfuck(asm: str, output_file=None) -> str:
                          ptr(-empty_offset) + '\n')
             case 'add', b_off, e_off:
                 b_off, e_off = int(b_off), int(e_off)
-                code += (f'\n# add {b_off} {e_off}\n{mov(e_off)}{ptr(e_off)}'+
-                    f'[\n\t-\n\t{ptr(b_off - e_off)}\t+\n\t{ptr(-b_off)}\t+\n\t{ptr(e_off)}]'+
-                    f'\n{ptr(-e_off)}\n')
+                code += add(b_off, e_off)
             case 'sub', b_off, e_off:
                 b_off, e_off = int(b_off), int(e_off)
-                code += (f'\n# sub {b_off} {e_off}\n{mov(e_off)}{ptr(e_off)}' +
-                    f'[\n\t-\n\t{ptr(b_off - e_off)}\t-\n\t{ptr(-b_off)}\t+\n\t{ptr(e_off)}]' +
-                    f'\n{ptr(-e_off)}\n')
+                code += sub(b_off, e_off)
             case ('not',): # 3 cells after current should be zero result will be written into adj cell
-                code += '>+< [>->]>[>>]<< <'
+                code += not_op()
+            case 'eq', b_off, res: # 3 cells after current should be zero
+                b_off, res = int(b_off), int(res)
+                code += (add(res, res + 1) + ptr(b_off) + sub(res - b_off, res + 1) + ptr(res - b_off) +
+                         '\n' + not_op() + ptr(-res))
+                code += ptr(res) + '[-]' + ptr(-res) # setting the cell with the difference to zero
+            case 'ne', b_off, res:
+                pass
             case _:
                 code += line + '\n'
     if output_file is not None:
@@ -144,8 +160,40 @@ not
 '''
 test(example8, [0, 1, 0])
 
+example9 = '''
+set 39
+ptr 1
+set 39
+ptr -1
+eq 1 2
+.
+ptr 1
+.
+ptr 1
+.
+ptr 1
+.
+'''
+test(example9, [39, 39, 0, 1])
+
+example10 = '''
+set 39
+ptr 1
+set 40
+ptr -1
+eq 1 2
+.
+ptr 1
+.
+ptr 1
+.
+ptr 1
+.
+'''
+test(example10, [39, 40, 0, 0])
+
 if __name__ == "__main__":
-    code = asm_to_brainfuck(example8)
+    code = asm_to_brainfuck(example10)
     print(code)
     result = run_brainfuck(code)
     print(result)
