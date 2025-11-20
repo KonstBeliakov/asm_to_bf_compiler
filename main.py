@@ -16,8 +16,6 @@ def asm_to_brainfuck(asm: str, output_file=None) -> str:
     code = ""
     for line in asm.splitlines():
         match line.split():
-            case ('set0',):
-                code += '[-] # set0\n'
             case 'ptr', n:
                 code += ptr(offset=int(n))
             case 'set', n:
@@ -35,6 +33,16 @@ def asm_to_brainfuck(asm: str, output_file=None) -> str:
                          ptr(offset) + mov(-offset) +
                          ptr(empty_offset - offset) + mov(offset - empty_offset) +
                          ptr(-empty_offset) + '\n')
+            case 'add', b_off, e_off:
+                b_off, e_off = int(b_off), int(e_off)
+                code += (f'\n# add {b_off} {e_off}\n{mov(e_off)}{ptr(e_off)}'+
+                    f'[\n\t-\n\t{ptr(b_off - e_off)}\t+\n\t{ptr(-b_off)}\t+\n\t{ptr(e_off)}]'+
+                    f'\n{ptr(-e_off)}\n')
+            case 'sub', b_off, e_off:
+                b_off, e_off = int(b_off), int(e_off)
+                code += (f'\n# sub {b_off} {e_off}\n{mov(e_off)}{ptr(e_off)}' +
+                    f'[\n\t-\n\t{ptr(b_off - e_off)}\t-\n\t{ptr(-b_off)}\t+\n\t{ptr(e_off)}]' +
+                    f'\n{ptr(-e_off)}\n')
             case _:
                 code += line + '\n'
     if output_file is not None:
@@ -43,7 +51,7 @@ def asm_to_brainfuck(asm: str, output_file=None) -> str:
     return code
 
 
-test_number = 0
+test_number = 1
 def test(code, result):
     global test_number
     compiled = asm_to_brainfuck(code)
@@ -96,9 +104,30 @@ swap 1 2
 '''
 test(example4, [100, 98])
 
+example5 = '''
+set 3
+ptr 1
+set 5
+ptr -1
+add 1 2
+.>.>.
+'''
+test(example5, [3, 8, 0])
+
+
+example6 = '''
+set 3
+ptr 1
+set 5
+ptr -1
+sub 1 2
+.>.>.
+'''
+test(example6, [3, 2, 0])
+
 
 if __name__ == "__main__":
-    code = asm_to_brainfuck(example4)
+    code = asm_to_brainfuck(example6)
     print(code)
     result = run_brainfuck(code)
     print(result)
