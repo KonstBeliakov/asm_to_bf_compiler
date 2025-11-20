@@ -15,7 +15,7 @@ def mov(offset: int):
 def asm_to_brainfuck(asm: str, output_file=None) -> str:
     code = ""
     for line in asm.splitlines():
-        match line.split():
+        match line.strip().split():
             case 'ptr', n:
                 code += ptr(offset=int(n))
             case 'set', n:
@@ -43,6 +43,8 @@ def asm_to_brainfuck(asm: str, output_file=None) -> str:
                 code += (f'\n# sub {b_off} {e_off}\n{mov(e_off)}{ptr(e_off)}' +
                     f'[\n\t-\n\t{ptr(b_off - e_off)}\t-\n\t{ptr(-b_off)}\t+\n\t{ptr(e_off)}]' +
                     f'\n{ptr(-e_off)}\n')
+            case ('not',): # 3 cells after current should be zero result will be written into adj cell
+                code += '>+< [>->]>[>>]<< <'
             case _:
                 code += line + '\n'
     if output_file is not None:
@@ -125,10 +127,28 @@ sub 1 2
 '''
 test(example6, [3, 2, 0])
 
+example7 = '''
+set 3
+not
+.
+ptr 1
+.
+ptr 1
+.
+'''
+test(example7, [3, 0, 0])
+
+example8 = '''
+not
+.>.>.
+'''
+test(example8, [0, 1, 0])
 
 if __name__ == "__main__":
-    code = asm_to_brainfuck(example6)
+    code = asm_to_brainfuck(example8)
     print(code)
     result = run_brainfuck(code)
     print(result)
     print([ord(i) for i in result])
+
+    #print([ord(i) for i in run_brainfuck('>+< [>->]>[>>]<< <    .>.>.')])
