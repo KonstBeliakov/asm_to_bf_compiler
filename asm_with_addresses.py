@@ -8,6 +8,7 @@ class Compiler:
         self.variables = {f'r{i}': i for i in range(self.registers)}
         self.used_ptr = self.registers  # first 10 memory cells are reserved as registers
         self.code = ''
+        self.cycle_address_stack = []
 
     def ensure_varname(self, varname: str):
         if varname not in self.variables:
@@ -99,6 +100,19 @@ class Compiler:
         self.seti(varname, 0)
         self.add(varname, varname2)
 
+    def while_begin(self, varname: str):
+        self.goto(varname)
+        self.code += '['
+        self.cycle_address_stack.append(varname)
+
+    def while_end(self):
+        if self.cycle_address_stack:
+            addr = self.cycle_address_stack.pop()
+            self.goto(addr)
+            self.code += ']'
+        else:
+            raise RuntimeError("Unmatched end")
+
     def compile(self, asm: str, output_file=None) -> str:
         self.code = ""
         for line in asm.splitlines():
@@ -119,6 +133,10 @@ class Compiler:
                     self.input(varname)
                 case ('out', varname):
                     self.out(varname)
+                case ('while', varname):
+                    self.while_begin(varname)
+                case ('end',):
+                    self.while_end()
                 case _:
                     self.code += line + '\n'
         if output_file is not None:

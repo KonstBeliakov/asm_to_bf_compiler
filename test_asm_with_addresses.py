@@ -55,9 +55,21 @@ def test4():
     '''
     _test(code, [5, 102])
 
+def test5():
+    code = '''
+        seti a 5
+        seti b 2
+        while a
+            out b
+            out a
+            addi a -1
+        end
+    '''
+    _test(code, [2, 5, 2, 4, 2, 3, 2, 2, 2, 1])
 
 if __name__ == "__main__":
     test1()
     test2()
     test3()
     test4()
+    test5()
