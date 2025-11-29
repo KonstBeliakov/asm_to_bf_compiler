@@ -29,6 +29,24 @@ def test1():
 
 def test2():
     code = '''
+        seti a 39
+        seti b 20
+        out a
+        out b
+    '''
+    _test(code, [39, 20])
+
+def test3():
+    code = '''
+        seti a 97
+        set b a
+        out a
+        out b
+    '''
+    _test(code, [97, 97])
+
+def test4():
+    code = '''
         seti a 97
         seti b 5
         add a b
@@ -36,3 +54,10 @@ def test2():
         out a
     '''
     _test(code, [5, 102])
+
+
+if __name__ == "__main__":
+    test1()
+    test2()
+    test3()
+    test4()
