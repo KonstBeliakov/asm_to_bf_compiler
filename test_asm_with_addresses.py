@@ -20,17 +20,18 @@ def _test(code, result):
 
 def test1():
     code = '''
-        seti a 97
+        set a 97
         out a
-        addi a 5
+        add a 5
         out a
+        out 39
     '''
-    _test(code, [97, 102])
+    _test(code, [97, 102, 39])
 
 def test2():
     code = '''
-        seti a 39
-        seti b 20
+        set a 39
+        set b 20
         out a
         out b
     '''
@@ -38,7 +39,7 @@ def test2():
 
 def test3():
     code = '''
-        seti a 97
+        set a 97
         set b a
         out a
         out b
@@ -47,8 +48,8 @@ def test3():
 
 def test4():
     code = '''
-        seti a 97
-        seti b 5
+        set a 97
+        set b 5
         add a b
         out b
         out a
@@ -57,19 +58,19 @@ def test4():
 
 def test5():
     code = '''
-        seti a 5
-        seti b 2
+        set a 5
+        set b 2
         while a
             out b
             out a
-            addi a -1
+            add a -1
         end
     '''
     _test(code, [2, 5, 2, 4, 2, 3, 2, 2, 2, 1])
 
 def test6():
     code = '''
-        seti a 5
+        set a 5
         repeat 5
             out a
         end
@@ -78,7 +79,7 @@ def test6():
 
 def test7():
     code = '''
-        seti a 5
+        set a 5
         repeat a
             out a
         end

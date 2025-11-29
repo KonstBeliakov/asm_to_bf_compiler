@@ -36,6 +36,11 @@ class Compiler:
         self.goto(varname)
         self.code += ','
 
+    def outi(self, n: int):
+        self.seti('r0', n)
+        self.out('r0')
+        self.seti('r0', 0)
+
     def out(self, varname: str):
         self.goto(varname)
         self.code += '.'
@@ -131,31 +136,37 @@ class Compiler:
         self.code = ""
         for line in asm.splitlines():
             match line.strip().split():
-                case ('seti', varname, n):
-                    self.seti(varname, int(n))
-                case('addi', varname, n):
-                    self.addi(varname, int(n))
-                case ('subi', varname, n):
-                    self.subi(varname, int(n))
-                case ('add', varname, varname2):
-                    self.add(varname, varname2)
-                case ('sub', varname, varname2):
-                    self.sub(varname, varname2)
-                case ('set', varname, varname2):
-                    self.set(varname, varname2)
+                case ('add', varname, arg):
+                    if re.fullmatch(r'[+-]?\d+', arg):
+                        self.addi(varname, int(arg))
+                    else:
+                        self.add(varname, arg)
+                case ('sub', varname, arg):
+                    if re.fullmatch(r'[+-]?\d+', arg):
+                        self.subi(varname, int(arg))
+                    else:
+                        self.sub(varname, arg)
+                case ('set', varname, arg):
+                    if re.fullmatch(r'[+-]?\d+', arg):
+                        self.seti(varname, int(arg))
+                    else:
+                        self.set(varname, arg)
                 case ('in', varname):
                     self.input(varname)
-                case ('out', varname):
-                    self.out(varname)
+                case ('out', arg):
+                    if re.fullmatch(r'[+-]?\d+', arg):
+                        self.outi(int(arg))
+                    else:
+                        self.out(arg)
                 case ('while', varname):
                     self.while_begin(varname)
                 case ('end',):
                     self.while_end()
-                case ('repeat', n):
-                    if re.fullmatch(r'[+-]?\d+', n):
-                        self.repeati_begin(int(n))
+                case ('repeat', arg):
+                    if re.fullmatch(r'[+-]?\d+', arg):
+                        self.repeati_begin(int(arg))
                     else:
-                        self.repeat(n)
+                        self.repeat(arg)
                 case _:
                     self.code += line + '\n'
         if output_file is not None:
