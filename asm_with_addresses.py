@@ -1,3 +1,5 @@
+import re
+
 from interpreter import run_brainfuck
 
 
@@ -113,6 +115,18 @@ class Compiler:
         else:
             raise RuntimeError("Unmatched end")
 
+    def repeati_begin(self, n):
+        cc = f'cycle_counter{len(self.cycle_address_stack)}'
+        self.seti(cc, n)
+        self.while_begin(cc)
+        self.subi(cc, 1)
+
+    def repeat(self, varname: str):
+        cc = f'cycle_counter{len(self.cycle_address_stack)}'
+        self.set(cc, varname)
+        self.while_begin(cc)
+        self.subi(cc, 1)
+
     def compile(self, asm: str, output_file=None) -> str:
         self.code = ""
         for line in asm.splitlines():
@@ -137,6 +151,11 @@ class Compiler:
                     self.while_begin(varname)
                 case ('end',):
                     self.while_end()
+                case ('repeat', n):
+                    if re.fullmatch(r'[+-]?\d+', n):
+                        self.repeati_begin(int(n))
+                    else:
+                        self.repeat(n)
                 case _:
                     self.code += line + '\n'
         if output_file is not None:
