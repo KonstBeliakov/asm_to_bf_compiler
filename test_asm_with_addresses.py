@@ -153,6 +153,32 @@ def test_not_3():
     '''
     _test(code, [0, 1])
 
+def test_eq_1():
+    code = '''
+        set a 39
+        set b 5
+        set c 39
+        
+        eq d a b
+        out d
+        
+        eq d a c
+        out d
+    '''
+    _test(code, [0, 1])
+
+def test_eq_2():
+    code = '''
+        set a 39
+
+        eq d a 39
+        out d
+
+        eq d a 100
+        out d
+    '''
+    _test(code, [1, 0])
+
 if __name__ == "__main__":
     # set, add, sub, out
     test1()
@@ -175,3 +201,7 @@ if __name__ == "__main__":
     test_not_1()
     test_not_2()
     test_not_3()
+
+    # eq
+    test_eq_1()
+    test_eq_2()

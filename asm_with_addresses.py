@@ -160,10 +160,14 @@ class Compiler:
             self.seti(varname, 1)
 
     def eq(self, varname: str, arg1: str, arg2: str):
-        raise NotImplementedError
+        self.set(varname, arg1)
+        self.sub(varname, arg2)
+        self.not_op(varname, varname)
 
     def eqi(self, varname: str, arg1: str, arg2: int):
-        raise NotImplementedError
+        self.set(varname, arg1)
+        self.subi(varname, arg2)
+        self.not_op(varname, varname)
 
     def compile(self, asm: str, output_file=None) -> str:
         self.code = ""
@@ -207,6 +211,11 @@ class Compiler:
                         self.noti_op(varname, int(arg))
                     else:
                         self.not_op(varname, arg)
+                case ('eq', varname, arg1, arg2):
+                    if re.fullmatch(r'[+-]?\d+', arg2):
+                        self.eqi(varname, arg1, int(arg2))
+                    else:
+                        self.eq(varname, arg1, arg2)
                 case _:
                     self.code += line + '\n'
         if output_file is not None:
