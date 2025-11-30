@@ -56,7 +56,7 @@ def test4():
     '''
     _test(code, [5, 102])
 
-def test5():
+def test_while_1():
     code = '''
         set a 5
         set b 2
@@ -68,7 +68,23 @@ def test5():
     '''
     _test(code, [2, 5, 2, 4, 2, 3, 2, 2, 2, 1])
 
-def test6():
+def test_while_2():
+    code = '''
+        set a 2
+        while a
+            set b 3
+            while b
+                set c a
+                add c b
+                out c
+                sub b 1
+            end
+            sub a 1
+        end
+    '''
+    _test(code, [5, 4, 3, 4, 3, 2])
+
+def test_repeat_1():
     code = '''
         set a 5
         repeat 5
@@ -77,7 +93,7 @@ def test6():
     '''
     _test(code, [5, 5, 5, 5, 5])
 
-def test7():
+def test_repeat_2():
     code = '''
         set a 5
         repeat a
@@ -86,11 +102,33 @@ def test7():
     '''
     _test(code, [5, 5, 5, 5, 5])
 
+def test_if_1():
+    code = '''
+        set a 5
+        if a
+            out a
+        end
+        set a 0
+        if a
+            out a
+        end
+    '''
+    _test(code, [5])
+
 if __name__ == "__main__":
+    # set, add, sub, out
     test1()
     test2()
     test3()
     test4()
-    test5()
-    test6()
-    test7()
+
+    # while
+    test_while_1()
+    test_while_2()
+
+    # repeat
+    test_repeat_1()
+    test_repeat_2()
+
+    # if
+    test_if_1()

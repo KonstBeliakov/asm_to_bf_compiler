@@ -7,7 +7,7 @@ class Compiler:
     def __init__(self):
         self.current_address = 0
         self.registers = 10
-        self.variables = {f'r{i}': i for i in range(self.registers)}
+        self.variables = {f'r{i}': (self.registers - i - 1) for i in range(self.registers)}
         self.used_ptr = self.registers  # first 10 memory cells are reserved as registers
         self.code = ''
         self.cycle_address_stack = []
@@ -110,13 +110,16 @@ class Compiler:
     def while_begin(self, varname: str):
         self.goto(varname)
         self.code += '['
-        self.cycle_address_stack.append(varname)
+        self.cycle_address_stack.append(('while', varname))
 
-    def while_end(self):
+    def end(self):
         if self.cycle_address_stack:
-            addr = self.cycle_address_stack.pop()
-            self.goto(addr)
-            self.code += ']'
+            op, args = self.cycle_address_stack.pop()
+            if op == 'while':
+                self.goto(args)
+                self.code += ']'
+            if op == 'if':
+                self.if_end()
         else:
             raise RuntimeError("Unmatched end")
 
@@ -131,6 +134,15 @@ class Compiler:
         self.set(cc, varname)
         self.while_begin(cc)
         self.subi(cc, 1)
+
+    def if_begin(self, varname: str):
+        self.goto(varname)
+        self.code += '['
+        self.cycle_address_stack.append(('if', varname))
+
+    def if_end(self):
+        self.goto('r0') # end of the cycle
+        self.code += ']'
 
     def compile(self, asm: str, output_file=None) -> str:
         self.code = ""
@@ -161,12 +173,14 @@ class Compiler:
                 case ('while', varname):
                     self.while_begin(varname)
                 case ('end',):
-                    self.while_end()
+                    self.end()
                 case ('repeat', arg):
                     if re.fullmatch(r'[+-]?\d+', arg):
                         self.repeati_begin(int(arg))
                     else:
                         self.repeat(arg)
+                case ('if', varname):
+                    self.if_begin(varname)
                 case _:
                     self.code += line + '\n'
         if output_file is not None:
