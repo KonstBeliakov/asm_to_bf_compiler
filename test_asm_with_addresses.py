@@ -115,6 +115,44 @@ def test_if_1():
     '''
     _test(code, [5])
 
+def test_not_1():
+    code = '''
+        set a 0
+        not b a
+        out b
+        out a
+        
+        out r0
+        out r1
+        out r2
+        out r3
+    '''
+    _test(code, [1, 0, 0, 0, 0, 0])
+
+def test_not_2():
+    code = '''    
+        set a 39
+        not b a
+        out b
+        out a
+        
+        out r0
+        out r1
+        out r2
+        out r3
+    '''
+    _test(code, [0, 39, 0, 0, 0, 0])
+
+def test_not_3():
+    code = '''    
+        not b 1
+        out b
+        
+        not b 0
+        out b
+    '''
+    _test(code, [0, 1])
+
 if __name__ == "__main__":
     # set, add, sub, out
     test1()
@@ -132,3 +170,8 @@ if __name__ == "__main__":
 
     # if
     test_if_1()
+
+    # not
+    test_not_1()
+    test_not_2()
+    test_not_3()

@@ -141,8 +141,29 @@ class Compiler:
         self.cycle_address_stack.append(('if', varname))
 
     def if_end(self):
-        self.goto('r0') # end of the cycle
+        self.seti('r0', 0)
         self.code += ']'
+
+    def not_op(self, varname: str, arg: str):
+        self.set('r3', arg) # r3 r2 r1 r0 - tree empty cells in a row
+        self.seti('r2', 1)
+        self.goto('r3')
+        self.code += '[>->]>[>>]<< <' # not [>->] could be replaced with goto
+        self.set(varname, 'r2')
+        self.seti('r2', 0) # last two lines should be replaced with mov
+        self.seti('r3', 0)
+
+    def noti_op(self, varname: str, arg: int):
+        if arg:
+            self.seti(varname, 0)
+        else:
+            self.seti(varname, 1)
+
+    def eq(self, varname: str, arg1: str, arg2: str):
+        raise NotImplementedError
+
+    def eqi(self, varname: str, arg1: str, arg2: int):
+        raise NotImplementedError
 
     def compile(self, asm: str, output_file=None) -> str:
         self.code = ""
@@ -181,6 +202,11 @@ class Compiler:
                         self.repeat(arg)
                 case ('if', varname):
                     self.if_begin(varname)
+                case ('not', varname, arg):
+                    if re.fullmatch(r'[+-]?\d+', arg):
+                        self.noti_op(varname, int(arg))
+                    else:
+                        self.not_op(varname, arg)
                 case _:
                     self.code += line + '\n'
         if output_file is not None:
