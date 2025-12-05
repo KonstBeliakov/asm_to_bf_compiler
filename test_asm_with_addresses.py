@@ -66,7 +66,6 @@ def test_while_1():
             out b
             out a
             add a -1
-        end
     '''
     _test(code, [2, 5, 2, 4, 2, 3, 2, 2, 2, 1])
 
@@ -80,9 +79,7 @@ def test_while_2():
                 add c b
                 out c
                 sub b 1
-            end
             sub a 1
-        end
     '''
     _test(code, [5, 4, 3, 4, 3, 2])
 
@@ -91,7 +88,6 @@ def test_repeat_1():
         set a 5
         repeat 5
             out a
-        end
     '''
     _test(code, [5, 5, 5, 5, 5])
 
@@ -100,7 +96,6 @@ def test_repeat_2():
         set a 5
         repeat a
             out a
-        end
     '''
     _test(code, [5, 5, 5, 5, 5])
 
@@ -109,11 +104,9 @@ def test_if_1():
         set a 5
         if a
             out a
-        end
         set a 0
         if a
             out a
-        end
     '''
     _test(code, [5])
 
@@ -123,7 +116,6 @@ def test_if_2():
         set b 1
         if b
             set a 1
-        end
         out a
     '''
     _test(code, [1])
@@ -135,11 +127,8 @@ def test_if_3():
             if a
                 if a
                     out a
-                end
                 out a
-            end
             out a
-        end
         out a
     '''
     _test(code, [1, 1, 1, 1])

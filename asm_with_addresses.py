@@ -3,11 +3,21 @@ import re
 from interpreter import run_brainfuck
 
 
+def count_leading_spaces(line: str) -> int:
+    count = 0
+    for i in line:
+        if i == ' ':
+            count += 1
+        else:
+            return count
+    return count
+
+
 class Compiler:
     def __init__(self):
         self.current_address = 0
         self.variables = {}
-        self.used_ptr = self.registers  # first 10 memory cells are reserved as registers
+        self.used_ptr = 0  # first 10 memory cells are reserved as registers
         self.code = ''
         self.cycle_address_stack = []
         self.alloc_counter = 0
@@ -25,11 +35,14 @@ class Compiler:
             self.ensure_varname(names[-1])
         return names
 
-    def free_var(self, varname, zero=True):
-        if varname in self.variables:
-            if zero:
-                self.seti(varname, 0)
-            del self.variables[varname]
+    def free_vars(self, *args, zero=True):
+        for varname in args:
+            if varname in self.variables:
+                if zero:
+                    self.seti(varname, 0)
+                del self.variables[varname]
+            else:
+                raise ValueError(f'Can\'t delete not existing variable {varname}')
 
     def goto(self, varname: str):
         self.ensure_varname(varname)
@@ -54,7 +67,7 @@ class Compiler:
         r0 = self.allocate_memory(1)[0]
         self.seti(r0, n)
         self.out(r0)
-        self.free_var(r0)
+        self.free_vars(r0)
         #self.seti('r0', 0)
 
     def out(self, varname: str):
@@ -97,7 +110,7 @@ class Compiler:
         self.goto(r0)
         self.code += ']'
 
-        self.free_var(r0)
+        self.free_vars(r0)
 
     def sub(self, varname: str, varname2: str):
         r0 = self.allocate_memory(1)[0]
@@ -125,7 +138,7 @@ class Compiler:
         self.goto(r0)
         self.code += ']'
 
-        self.free_var(r0)
+        self.free_vars(r0)
 
     def set(self, varname: str, varname2: str):
         self.seti(varname, 0)
@@ -145,7 +158,8 @@ class Compiler:
             if op == 'if':
                 self.if_end(arg)
         else:
-            raise RuntimeError("Unmatched end")
+            pass # lets just ignore it for now
+            #raise RuntimeError("Unmatched end")
 
     def repeati_begin(self, n):
         cc = f'cycle_counter{len(self.cycle_address_stack)}'
@@ -196,14 +210,14 @@ class Compiler:
         self.set(r0, arg1)
         self.sub(r0, arg2)
         self.not_op(varname, r0)
-        self.free_var(r0)
+        self.free_vars(r0)
 
     def eqi(self, varname: str, arg1: str, arg2: int):
         r0 = self.allocate_memory(1)[0]
         self.set(r0, arg1)
         self.subi(r0, arg2)
         self.not_op(varname, r0)
-        self.free_var(r0)
+        self.free_vars(r0)
 
     def neq(self, varname: str, arg1: str, arg2: str):
         raise NotImplemented
@@ -226,9 +240,7 @@ class Compiler:
         self.seti(r5, 0)
         self.seti(r6, 0)
 
-        self.free_var(r4)
-        self.free_var(r5)
-        self.free_var(r6)
+        self.free_vars(r4, r5, r6)
 
     def gt(self, varname: str, arg1: str, arg2: str):
         self.lt(varname, arg2, arg1)
@@ -247,7 +259,20 @@ class Compiler:
 
     def compile(self, asm: str, output_file=None) -> str:
         self.code = ""
+        asm += '\nend'
+        indent_stack = []
         for line in asm.splitlines():
+            if line.isspace():
+                continue
+            indent = count_leading_spaces(line)
+
+            if not indent_stack or indent > indent_stack[-1]:
+                indent_stack.append(indent)
+
+            while indent_stack and indent < indent_stack[-1]:
+                indent_stack.pop()
+                self.end()
+
             match line.strip().split():
                 case ('add', varname, arg):
                     if re.fullmatch(r'[+-]?\d+', arg):
@@ -273,8 +298,6 @@ class Compiler:
                         self.out(arg)
                 case ('while', varname):
                     self.while_begin(varname)
-                case ('end',):
-                    self.end()
                 case ('repeat', arg):
                     if re.fullmatch(r'[+-]?\d+', arg):
                         self.repeati_begin(int(arg))
