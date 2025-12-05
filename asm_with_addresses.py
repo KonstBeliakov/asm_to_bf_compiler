@@ -6,16 +6,30 @@ from interpreter import run_brainfuck
 class Compiler:
     def __init__(self):
         self.current_address = 0
-        self.registers = 10
-        self.variables = {f'r{i}': (self.registers - i - 1) for i in range(self.registers)}
+        self.variables = {}
         self.used_ptr = self.registers  # first 10 memory cells are reserved as registers
         self.code = ''
         self.cycle_address_stack = []
+        self.alloc_counter = 0
 
     def ensure_varname(self, varname: str):
         if varname not in self.variables:
             self.variables[varname] = self.used_ptr
             self.used_ptr += 1
+
+    def allocate_memory(self, bytes: int):
+        names = []
+        for i in range(bytes):
+            names.append(f'__t{self.alloc_counter}')
+            self.alloc_counter += 1
+            self.ensure_varname(names[-1])
+        return names
+
+    def free_var(self, varname, zero=True):
+        if varname in self.variables:
+            if zero:
+                self.seti(varname, 0)
+            del self.variables[varname]
 
     def goto(self, varname: str):
         self.ensure_varname(varname)
@@ -37,9 +51,11 @@ class Compiler:
         self.code += ','
 
     def outi(self, n: int):
-        self.seti('r0', n)
-        self.out('r0')
-        self.seti('r0', 0)
+        r0 = self.allocate_memory(1)[0]
+        self.seti(r0, n)
+        self.out(r0)
+        self.free_var(r0)
+        #self.seti('r0', 0)
 
     def out(self, varname: str):
         self.goto(varname)
@@ -56,6 +72,8 @@ class Compiler:
         self.addi(varname, -n)
 
     def add(self, varname: str, varname2: str):
+        r0 = self.allocate_memory(1)[0]
+
         self.goto(varname2)
         self.code += '['
         self.code += '-'
@@ -63,23 +81,27 @@ class Compiler:
         self.goto(varname)
         self.code += '+'
 
-        self.goto('r0')
+        self.goto(r0)
         self.code += '+'
 
         self.goto(varname2)
         self.code += ']'
 
-        self.goto('r0')
+        self.goto(r0)
         self.code += '['
         self.code += '-'
 
         self.goto(varname2)
         self.code += '+'
 
-        self.goto('r0')
+        self.goto(r0)
         self.code += ']'
+
+        self.free_var(r0)
 
     def sub(self, varname: str, varname2: str):
+        r0 = self.allocate_memory(1)[0]
+
         self.goto(varname2)
         self.code += '['
         self.code += '-'
@@ -87,21 +109,23 @@ class Compiler:
         self.goto(varname)
         self.code += '-'
 
-        self.goto('r0')
+        self.goto(r0)
         self.code += '+'
 
         self.goto(varname2)
         self.code += ']'
 
-        self.goto('r0')
+        self.goto(r0)
         self.code += '['
         self.code += '-'
 
         self.goto(varname2)
         self.code += '+'
 
-        self.goto('r0')
+        self.goto(r0)
         self.code += ']'
+
+        self.free_var(r0)
 
     def set(self, varname: str, varname2: str):
         self.seti(varname, 0)
@@ -114,12 +138,12 @@ class Compiler:
 
     def end(self):
         if self.cycle_address_stack:
-            op, ret = self.cycle_address_stack.pop()
+            op, arg = self.cycle_address_stack.pop()
             if op == 'while':
-                self.goto(ret)
+                self.goto(arg)
                 self.code += ']'
             if op == 'if':
-                self.if_end()
+                self.if_end(arg)
         else:
             raise RuntimeError("Unmatched end")
 
@@ -136,29 +160,30 @@ class Compiler:
         self.subi(cc, 1)
 
     def if_begin(self, varname: str):
-        # uses r0
-        temp_name = f'if_{len(self.cycle_address_stack)}'
-        self.set(temp_name, varname)
-        self.goto(temp_name)
+        r0 = self.allocate_memory(1)[0]
+        self.set(r0, varname)
+        self.goto(r0)
         self.code += '['
-        self.cycle_address_stack.append(('if', varname))
+        self.cycle_address_stack.append(('if', r0))
 
-    def if_end(self):
-        # uses r0
-        temp_name = f'if_{len(self.cycle_address_stack)}'
-        self.seti(temp_name, 0)
-        self.goto(temp_name)
+    def if_end(self, r0):
+        self.seti(r0, 0)
+        self.goto(r0)
         self.code += ']'
 
     def not_op(self, varname: str, arg: str):
-        # uses r3, r2, r1, r0
-        self.set('r3', arg)
-        self.seti('r2', 1)
-        self.goto('r3')
-        self.code += '[>->]>[>>]<< <' # not [>->] could be replaced with goto
-        self.set(varname, 'r2')
-        self.seti('r2', 0) # last two lines should be replaced with mov
-        self.seti('r3', 0)
+        #self.set('r3', arg)
+        #self.seti('r2', 1)
+        #self.goto('r3')
+        #self.code += '[>->]>[>>]<< <' # not [>->] could be replaced with goto
+        #self.set(varname, 'r2')
+        #self.seti('r2', 0) # last two lines should be replaced with mov
+        #self.seti('r3', 0)
+        self.seti(varname, 1)
+        self.if_begin(arg)
+        self.seti(varname, 0)
+        self.end()
+
 
     def noti_op(self, varname: str, arg: int):
         if arg:
@@ -167,53 +192,43 @@ class Compiler:
             self.seti(varname, 1)
 
     def eq(self, varname: str, arg1: str, arg2: str):
-        self.set(varname, arg1)
-        self.sub(varname, arg2)
-        self.not_op(varname, varname)
+        r0 = self.allocate_memory(1)[0]
+        self.set(r0, arg1)
+        self.sub(r0, arg2)
+        self.not_op(varname, r0)
+        self.free_var(r0)
 
     def eqi(self, varname: str, arg1: str, arg2: int):
-        self.set(varname, arg1)
-        self.subi(varname, arg2)
-        self.not_op(varname, varname)
+        r0 = self.allocate_memory(1)[0]
+        self.set(r0, arg1)
+        self.subi(r0, arg2)
+        self.not_op(varname, r0)
+        self.free_var(r0)
 
     def neq(self, varname: str, arg1: str, arg2: str):
         raise NotImplemented
 
     def lt(self, varname: str, arg1: str, arg2: str):
-        # uses r6, r5, r4, r3, r2, r1, r0
-        '''
-        varname = 0
-        r4 = arg1
-        r5 = arg2
-        while r5
-            r6 = !r4
-            if r6
-                varname = 1
-            r4--
-            r5--
-        r4 = 0
-        r5 = 0
-        r6 = 0
-        '''
+        r4, r5, r6 = self.allocate_memory(3)
 
         self.seti(varname, 0)
-        self.set('r4', arg1) # uses r0
-        self.set('r5', arg2) # uses r0
-        self.while_begin('r5')
-        self.not_op('r6', 'r4') # uses r3-r0
-        self.if_begin('r6')
+        self.set(r4, arg1)
+        self.set(r5, arg2)
+        self.while_begin(r5)
+        self.not_op(r6, r4)
+        self.if_begin(r6)
         self.seti(varname, 1)
-        self.if_end()
-        self.subi('r4', 1)
-        self.subi('r5', 1)
         self.end()
-        self.seti('r0', 0)
-        self.seti('r1', 0)
-        self.seti('r2', 0)
-        self.seti('r3', 0)
-        self.seti('r4', 0)
-        self.seti('r5', 0)
-        self.seti('r6', 0)
+        self.subi(r4, 1)
+        self.subi(r5, 1)
+        self.end()
+        self.seti(r4, 0)
+        self.seti(r5, 0)
+        self.seti(r6, 0)
+
+        self.free_var(r4)
+        self.free_var(r5)
+        self.free_var(r6)
 
     def gt(self, varname: str, arg1: str, arg2: str):
         self.lt(varname, arg2, arg1)

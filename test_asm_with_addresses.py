@@ -10,9 +10,8 @@ def _test(code, result, print_info=False):
     compiled = compiler.compile(code)
     t = [ord(i) for i in run_brainfuck(compiled)]
     if t != result:
-        print(f"Error: {t} != {result}")
         print(compiled)
-        raise Exception("Test failed")
+        raise Exception(f"Error: {t} != {result}")
     else:
         print(f"Test passed {test_number}")
         if print_info:
@@ -217,16 +216,8 @@ def test_lt_1():
         out c
         out a
         out b
-        
-        out r0
-        out r1
-        out r2
-        out r3
-        out r4
-        out r5
-        out r6
     '''
-    _test(code, [1, 10, 15, 0, 0, 0, 0, 0, 0])
+    _test(code, [1, 10, 15])
 
 if __name__ == "__main__":
     # set, add, sub, out
