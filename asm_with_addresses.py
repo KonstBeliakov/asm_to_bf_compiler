@@ -114,9 +114,9 @@ class Compiler:
 
     def end(self):
         if self.cycle_address_stack:
-            op, args = self.cycle_address_stack.pop()
+            op, ret = self.cycle_address_stack.pop()
             if op == 'while':
-                self.goto(args)
+                self.goto(ret)
                 self.code += ']'
             if op == 'if':
                 self.if_end()
@@ -136,16 +136,23 @@ class Compiler:
         self.subi(cc, 1)
 
     def if_begin(self, varname: str):
-        self.goto(varname)
+        # uses r0
+        temp_name = f'if_{len(self.cycle_address_stack)}'
+        self.set(temp_name, varname)
+        self.goto(temp_name)
         self.code += '['
         self.cycle_address_stack.append(('if', varname))
 
     def if_end(self):
-        self.seti('r0', 0)
+        # uses r0
+        temp_name = f'if_{len(self.cycle_address_stack)}'
+        self.seti(temp_name, 0)
+        self.goto(temp_name)
         self.code += ']'
 
     def not_op(self, varname: str, arg: str):
-        self.set('r3', arg) # r3 r2 r1 r0 - tree empty cells in a row
+        # uses r3, r2, r1, r0
+        self.set('r3', arg)
         self.seti('r2', 1)
         self.goto('r3')
         self.code += '[>->]>[>>]<< <' # not [>->] could be replaced with goto
@@ -168,6 +175,60 @@ class Compiler:
         self.set(varname, arg1)
         self.subi(varname, arg2)
         self.not_op(varname, varname)
+
+    def neq(self, varname: str, arg1: str, arg2: str):
+        raise NotImplemented
+
+    def lt(self, varname: str, arg1: str, arg2: str):
+        # uses r6, r5, r4, r3, r2, r1, r0
+        '''
+        varname = 0
+        r4 = arg1
+        r5 = arg2
+        while r5
+            r6 = !r4
+            if r6
+                varname = 1
+            r4--
+            r5--
+        r4 = 0
+        r5 = 0
+        r6 = 0
+        '''
+
+        self.seti(varname, 0)
+        self.set('r4', arg1) # uses r0
+        self.set('r5', arg2) # uses r0
+        self.while_begin('r5')
+        self.not_op('r6', 'r4') # uses r3-r0
+        self.if_begin('r6')
+        self.seti(varname, 1)
+        self.if_end()
+        self.subi('r4', 1)
+        self.subi('r5', 1)
+        self.end()
+        self.seti('r0', 0)
+        self.seti('r1', 0)
+        self.seti('r2', 0)
+        self.seti('r3', 0)
+        self.seti('r4', 0)
+        self.seti('r5', 0)
+        self.seti('r6', 0)
+
+    def gt(self, varname: str, arg1: str, arg2: str):
+        self.lt(varname, arg2, arg1)
+
+    def leq(self, varname: str, arg1: str, arg2: str):
+        raise NotImplemented
+
+    def geq(self, varname: str, arg1: str, arg2: str):
+        self.leq(varname, arg2, arg1)
+
+    def or_op(self, varname: str, arg1: str, arg2: str):
+        raise NotImplemented
+
+    def and_op(self, varname: str, arg1: str, arg2: str):
+        raise NotImplemented
 
     def compile(self, asm: str, output_file=None) -> str:
         self.code = ""
@@ -216,6 +277,12 @@ class Compiler:
                         self.eqi(varname, arg1, int(arg2))
                     else:
                         self.eq(varname, arg1, arg2)
+                case ('lt', varname, arg1, arg2):
+                    self.lt(varname, arg1, arg2)
+                case ('gt', varname, arg1, arg2):
+                    self.gt(varname, arg1, arg2)
+                case ('goto', varname):
+                    self.goto(varname)
                 case _:
                     self.code += line + '\n'
         if output_file is not None:

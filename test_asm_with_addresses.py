@@ -4,7 +4,7 @@ from interpreter import run_brainfuck
 test_number = 1
 
 
-def _test(code, result):
+def _test(code, result, print_info=False):
     global test_number
     compiler = Compiler()
     compiled = compiler.compile(code)
@@ -15,6 +15,9 @@ def _test(code, result):
         raise Exception("Test failed")
     else:
         print(f"Test passed {test_number}")
+        if print_info:
+            print(compiled)
+            print(t)
     test_number += 1
 
 
@@ -115,19 +118,46 @@ def test_if_1():
     '''
     _test(code, [5])
 
+def test_if_2():
+    code = '''
+        set a 0
+        set b 1
+        if b
+            set a 1
+        end
+        out a
+    '''
+    _test(code, [1])
+
+def test_if_3():
+    code = '''
+        set a 1
+        if a
+            if a
+                if a
+                    out a
+                end
+                out a
+            end
+            out a
+        end
+        out a
+    '''
+    _test(code, [1, 1, 1, 1])
+
 def test_not_1():
     code = '''
         set a 0
         not b a
-        out b
         out a
+        out b
         
         out r0
         out r1
         out r2
         out r3
     '''
-    _test(code, [1, 0, 0, 0, 0, 0])
+    _test(code, [0, 1, 0, 0, 0, 0])
 
 def test_not_2():
     code = '''    
@@ -179,6 +209,25 @@ def test_eq_2():
     '''
     _test(code, [1, 0])
 
+def test_lt_1():
+    code = '''
+        set a 10
+        set b 15
+        lt c a b
+        out c
+        out a
+        out b
+        
+        out r0
+        out r1
+        out r2
+        out r3
+        out r4
+        out r5
+        out r6
+    '''
+    _test(code, [1, 10, 15, 0, 0, 0, 0, 0, 0])
+
 if __name__ == "__main__":
     # set, add, sub, out
     test1()
@@ -196,6 +245,8 @@ if __name__ == "__main__":
 
     # if
     test_if_1()
+    test_if_2()
+    test_if_3()
 
     # not
     test_not_1()
@@ -205,3 +256,6 @@ if __name__ == "__main__":
     # eq
     test_eq_1()
     test_eq_2()
+
+    # lt
+    test_lt_1()
