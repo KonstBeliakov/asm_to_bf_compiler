@@ -252,10 +252,21 @@ class Compiler:
         self.leq(varname, arg2, arg1)
 
     def or_op(self, varname: str, arg1: str, arg2: str):
-        raise NotImplemented
+        self.seti(varname, 0)
+        self.if_begin(arg1)
+        self.seti(varname, 1)
+        self.end()
+        self.if_begin(arg2)
+        self.seti(varname, 1)
+        self.end()
 
     def and_op(self, varname: str, arg1: str, arg2: str):
-        raise NotImplemented
+        self.seti(varname, 0)
+        self.if_begin(arg1)
+        self.if_begin(arg2)
+        self.seti(varname, 1)
+        self.end()
+        self.end()
 
     def compile(self, asm: str, output_file=None) -> str:
         self.code = ""
@@ -321,6 +332,10 @@ class Compiler:
                     self.gt(varname, arg1, arg2)
                 case ('goto', varname):
                     self.goto(varname)
+                case ('and', varname, arg1, arg2):
+                    self.and_op(varname, arg1, arg2)
+                case ('or', varname, arg1, arg2):
+                    self.or_op(varname, arg1, arg2)
                 case _:
                     self.code += line + '\n'
         if output_file is not None:

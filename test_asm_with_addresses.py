@@ -208,6 +208,46 @@ def test_lt_1():
     '''
     _test(code, [1, 10, 15])
 
+def test_or():
+    code = '''
+    set a 39
+    set b 0
+    set c 3
+    
+    or d a b
+    out d
+    
+    or d a c
+    out d
+    
+    or d b b
+    out d
+    
+    or d a a
+    out d
+    '''
+    _test(code, [1, 1, 0, 1])
+
+def test_and():
+    code = '''
+    set a 39
+    set b 0
+    set c 3
+    
+    and d a c
+    out d
+    
+    and d a b
+    out d
+    
+    and d b b
+    out d
+    
+    and d a a
+    out d
+    '''
+    _test(code, [1, 0, 0, 1])
+
 if __name__ == "__main__":
     # set, add, sub, out
     test1()
