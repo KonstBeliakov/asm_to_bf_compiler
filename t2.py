@@ -10,4 +10,7 @@ compiler = Compiler()
 compiled = compiler.compile(code)
 optimized = optimize_code(compiled)
 
+with open(f'{filename}_compiled.bf', 'w', encoding='utf-8') as file:
+    file.write(optimized)
+
 run_brainfuck(compiled, live_run=True)

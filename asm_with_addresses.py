@@ -17,24 +17,37 @@ class Compiler:
     def __init__(self):
         self.current_address = 0
         self.variables = {}
-        self.used_ptr = 0  # first 10 memory cells are reserved as registers
         self.code = ''
         self.cycle_address_stack = []
         self.alloc_counter = 0
 
         self.check_valid_digit = False
 
+        self.MAX_CELLS = 30_000
+
+        self.used_cells = [False] * self.MAX_CELLS
+
     def ensure_varname(self, varname: str):
         if varname not in self.variables:
-            self.variables[varname] = self.used_ptr
-            self.used_ptr += 1
+            self.allocate_memory(1, [varname])
 
-    def allocate_memory(self, bytes: int):
-        names = []
-        for i in range(bytes):
-            names.append(f'__t{self.alloc_counter}')
-            self.alloc_counter += 1
-            self.ensure_varname(names[-1])
+    def allocate_memory(self, bytes: int, names=None):
+        if names is None:
+            names = [f'__t{self.alloc_counter + i}' for i in range(bytes)]
+            self.alloc_counter += bytes
+        c1, c2 = self.current_address, self.current_address + 1
+        while bytes:
+            if c1 >= 0 and not self.used_cells[c1]:
+                self.used_cells[c1] = True
+                self.variables[names[bytes - 1]] = c1
+                bytes -= 1
+                continue
+            if c2 < self.MAX_CELLS and not self.used_cells[c2]:
+                self.used_cells[c2] = True
+                self.variables[names[bytes - 1]] = c2
+                bytes -= 1
+            c1 -= 1
+            c2 += 1
         return names
 
     def free_vars(self, *args, zero=True):
@@ -42,6 +55,7 @@ class Compiler:
             if varname in self.variables:
                 if zero:
                     self.seti(varname, 0)
+                self.used_cells[self.variables[varname]] = False
                 del self.variables[varname]
             else:
                 raise ValueError(f'Can\'t delete not existing variable {varname}')
