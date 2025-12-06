@@ -9,7 +9,7 @@ def _test(code, result, print_info=False):
     compiler = Compiler()
     compiled = compiler.compile(code)
     t = [ord(i) for i in run_brainfuck(compiled)]
-    if t != result:
+    if t != [i % 256 for i in result]:
         print(compiled)
         raise Exception(f"Error: {t} != {result}")
     else:
@@ -247,6 +247,35 @@ def test_and():
     out d
     '''
     _test(code, [1, 0, 0, 1])
+
+def test_mul():
+    code = '''
+    set a 5
+    set b 6
+    mul c a b
+    out c
+    out a
+    out b
+    '''
+    _test(code, [30, 5, 6])
+
+def test_mul2():
+    code = '''
+    set a 39
+    mul c a 2
+    out c
+    out a
+    '''
+    _test(code, [78, 39])
+
+def test_mul3():
+    code = '''
+    set a 39
+    mul c a -2
+    out c
+    out a
+    '''
+    _test(code, [-78, 39])
 
 if __name__ == "__main__":
     # set, add, sub, out

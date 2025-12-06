@@ -268,6 +268,18 @@ class Compiler:
         self.end()
         self.end()
 
+    def mul(self, varname: str, arg1: str, arg2: str):
+        self.seti(varname, 0)
+        self.repeat(arg1)
+        self.add(varname, arg2)
+        self.end()
+
+    def muli(self, varname: str, arg1: str, arg2: int):
+        self.seti(varname, 0)
+        self.repeati_begin(arg2)
+        self.add(varname, arg1)
+        self.end()
+
     def compile(self, asm: str, output_file=None) -> str:
         self.code = ""
         asm += '\nend'
@@ -336,6 +348,11 @@ class Compiler:
                     self.and_op(varname, arg1, arg2)
                 case ('or', varname, arg1, arg2):
                     self.or_op(varname, arg1, arg2)
+                case ('mul', varname, arg1, arg2):
+                    if re.fullmatch(r'[+-]?\d+', arg2):
+                        self.muli(varname, arg1, int(arg2))
+                    else:
+                        self.mul(varname, arg1, arg2)
                 case _:
                     self.code += line + '\n'
         if output_file is not None:
