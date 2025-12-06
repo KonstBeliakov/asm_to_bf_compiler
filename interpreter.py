@@ -27,7 +27,7 @@ def build_bracket_map(code: str) -> Dict[int, int]:
         raise SyntaxError(f"Unmatched '[' at position {stack[-1]}")
     return bm
 
-def run_brainfuck(code: str, inp: str = "", cells: int = 30000) -> str:
+def run_brainfuck(code: str, inp: str = "", cells: int = 30000, live_run=False) -> str:
     """
     Запустить Brainfuck-программу.
     - code: строка с кодом (все символы, не являющиеся командами, игнорируются).
@@ -35,7 +35,6 @@ def run_brainfuck(code: str, inp: str = "", cells: int = 30000) -> str:
     - cells: начальная длина ленты (при необходимости лента расширяется вправо).
     Возвращает собранный вывод как строку.
     """
-    # Оставляем только валидные команды для простоты (необязательно)
     valid = set("<>+-.,[]")
     prog = [c for c in code if c in valid]
 
@@ -46,6 +45,7 @@ def run_brainfuck(code: str, inp: str = "", cells: int = 30000) -> str:
     pc = 0  # program counter (индекс в prog)
     inp_pos = 0
     output_chars = []
+    input_chars = ''
 
     while pc < len(prog):
         cmd = prog[pc]
@@ -63,17 +63,25 @@ def run_brainfuck(code: str, inp: str = "", cells: int = 30000) -> str:
         elif cmd == '-':
             tape[ptr] = (tape[ptr] - 1) & 0xFF
         elif cmd == '.':
+            if input_chars:
+                print(chr(tape[ptr]), end='')
             output_chars.append(chr(tape[ptr]))
         elif cmd == ',':
-            if inp_pos < len(inp):
-                tape[ptr] = ord(inp[inp_pos]) & 0xFF
-                inp_pos += 1
+            if live_run:
+                print('AAAA')
+                if not input_chars:
+                    input_chars  += input() + '\n'
+                c = input_chars[0]
+                input_chars = input_chars[1:]
+                tape[ptr] = ord(c) & 0xFF
             else:
-                # EOF behaviour: записать 0 (часто используемый подход)
-                tape[ptr] = 0
+                if inp_pos < len(inp):
+                    tape[ptr] = ord(inp[inp_pos]) & 0xFF
+                    inp_pos += 1
+                else:
+                    tape[ptr] = 0
         elif cmd == '[':
             if tape[ptr] == 0:
-                # прыгаем к команде после соответствующей ']'
                 pc = bracket_map[pc]
         elif cmd == ']':
             if tape[ptr] != 0:
@@ -82,7 +90,7 @@ def run_brainfuck(code: str, inp: str = "", cells: int = 30000) -> str:
 
     return "".join(output_chars)
 
-# Простая командная обёртка для запуска из терминала
+
 if __name__ == "__main__":
     import argparse, sys, pathlib
 
@@ -108,5 +116,4 @@ if __name__ == "__main__":
         print("Error:", e, file=sys.stderr)
         sys.exit(1)
 
-    # печатаем вывод без дополнительного перевода строк
     sys.stdout.write(out)

@@ -25,7 +25,7 @@ def optimize_code_from_file(filename: str) -> str:
         print(f'Remove unnecessary chars: {len(text)} -> {len(text2)} (-{100 - len(text2) / len(text) * 100:.2f}%)')
         text3 = optimisation1(text2)
         print(f'Removing meaningless pairs of operations: {len(text2)} -> {len(text3)} (-{100 - len(text3) / len(text2) * 100:.2f}%)')
-        return optimisation1(remove_unnecessary_chars(f.read()))
+        return text3
 
 
 if __name__ == '__main__':

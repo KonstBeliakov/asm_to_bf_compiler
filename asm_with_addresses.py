@@ -22,6 +22,8 @@ class Compiler:
         self.cycle_address_stack = []
         self.alloc_counter = 0
 
+        self.check_valid_digit = False
+
     def ensure_varname(self, varname: str):
         if varname not in self.variables:
             self.variables[varname] = self.used_ptr
@@ -63,6 +65,33 @@ class Compiler:
         self.goto(varname)
         self.code += ','
 
+    def input_number(self, varname: str):
+        input_char, not_endl_condition, more_than_9_condition, answer_copy = self.allocate_memory(4)
+
+        self.seti(varname, 0)
+
+        ENDL_CODE = 10
+        self.input(input_char)
+        self.neqi(not_endl_condition, input_char, ENDL_CODE)
+
+        self.while_begin(not_endl_condition)
+        self.subi(input_char, 48)
+
+        if self.check_valid_digit: # Check if input_char is a valid digit
+            self.gt(more_than_9_condition, input_char, 9)
+            self.if_begin(more_than_9_condition)
+            self.out_string("Error: digit is >9")
+            self.end()
+
+        self.set(answer_copy, varname)  # should be replaced with mov
+        self.muli(varname, answer_copy, 10)
+        self.add(varname, input_char)
+        self.input(input_char)
+        self.neqi(not_endl_condition, input_char, ENDL_CODE)
+        self.end()
+
+        self.free_vars(input_char, not_endl_condition, more_than_9_condition, answer_copy)
+
     def outi(self, n: int):
         r0 = self.allocate_memory(1)[0]
         self.seti(r0, n)
@@ -73,6 +102,10 @@ class Compiler:
     def out(self, varname: str):
         self.goto(varname)
         self.code += '.'
+
+    def out_string(self, string: str):
+        for char in string:
+            self.outi(ord(char))
 
     def addi(self, varname: str, n: int):
         self.goto(varname)
@@ -140,9 +173,12 @@ class Compiler:
 
         self.free_vars(r0)
 
-    def set(self, varname: str, varname2: str):
-        self.seti(varname, 0)
-        self.add(varname, varname2)
+    def set(self, varname: str, varname2: str|int):
+        if isinstance(varname2, int):
+            self.seti(varname, varname2)
+        else:
+            self.seti(varname, 0)
+            self.add(varname, varname2)
 
     def while_begin(self, varname: str):
         self.goto(varname)
@@ -198,7 +234,6 @@ class Compiler:
         self.seti(varname, 0)
         self.end()
 
-
     def noti_op(self, varname: str, arg: int):
         if arg:
             self.seti(varname, 0)
@@ -220,9 +255,18 @@ class Compiler:
         self.free_vars(r0)
 
     def neq(self, varname: str, arg1: str, arg2: str):
-        raise NotImplemented
+        r0 = self.allocate_memory(1)[0]
+        self.eq(r0, arg1, arg2)
+        self.not_op(varname, r0)
+        self.free_vars(r0)
 
-    def lt(self, varname: str, arg1: str, arg2: str):
+    def neqi(self, varname: str, arg1: str, arg2: int):
+        r0 = self.allocate_memory(1)[0]
+        self.seti(r0, arg2)
+        self.neq(varname, arg1, r0)
+        self.free_vars(r0)
+
+    def lt(self, varname: str, arg1: str, arg2: str|int):
         r4, r5, r6 = self.allocate_memory(3)
 
         self.seti(varname, 0)
@@ -242,7 +286,7 @@ class Compiler:
 
         self.free_vars(r4, r5, r6)
 
-    def gt(self, varname: str, arg1: str, arg2: str):
+    def gt(self, varname: str, arg1: str, arg2: str|int):
         self.lt(varname, arg2, arg1)
 
     def leq(self, varname: str, arg1: str, arg2: str):
@@ -353,6 +397,10 @@ class Compiler:
                         self.muli(varname, arg1, int(arg2))
                     else:
                         self.mul(varname, arg1, arg2)
+                case ('input_number', varname):
+                    self.input_number(varname)
+                case ('out_string', string):
+                    self.out_string(string)
                 case _:
                     self.code += line + '\n'
         if output_file is not None:

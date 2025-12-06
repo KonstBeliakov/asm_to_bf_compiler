@@ -4,11 +4,11 @@ from interpreter import run_brainfuck
 test_number = 1
 
 
-def _test(code, result, print_info=False):
+def _test(code, result, print_info=False, input_string=''):
     global test_number
     compiler = Compiler()
     compiled = compiler.compile(code)
-    t = [ord(i) for i in run_brainfuck(compiled)]
+    t = [ord(i) for i in run_brainfuck(compiled, inp=input_string)]
     if t != [i % 256 for i in result]:
         print(compiled)
         raise Exception(f"Error: {t} != {result}")
@@ -276,6 +276,13 @@ def test_mul3():
     out a
     '''
     _test(code, [-78, 39])
+
+def test_input_number():
+    code = '''
+    input_number a
+    out a
+    '''
+    _test(code, [123], input_string='123\n')
 
 if __name__ == "__main__":
     # set, add, sub, out
