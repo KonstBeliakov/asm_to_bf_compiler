@@ -19,13 +19,16 @@ def optimisation1(code: str) -> str:
 
 def optimize_code_from_file(filename: str) -> str:
     with open(filename, 'r') as f:
-        text = f.read()
-        print(len(text))
-        text2 = remove_unnecessary_chars(text)
-        print(f'Remove unnecessary chars: {len(text)} -> {len(text2)} (-{100 - len(text2) / len(text) * 100:.2f}%)')
-        text3 = optimisation1(text2)
-        print(f'Removing meaningless pairs of operations: {len(text2)} -> {len(text3)} (-{100 - len(text3) / len(text2) * 100:.2f}%)')
-        return text3
+        optimize_code(f.read())
+
+
+def optimize_code(code: str) -> str:
+    print(len(code))
+    code2 = remove_unnecessary_chars(code)
+    print(f'Remove unnecessary chars: {len(code)} -> {len(code2)} (-{100 - len(code2) / len(code) * 100:.2f}%)')
+    code3 = optimisation1(code2)
+    print(f'Removing meaningless pairs of operations: {len(code2)} -> {len(code3)} (-{100 - len(code3) / len(code2) * 100:.2f}%)')
+    return code3
 
 
 if __name__ == '__main__':

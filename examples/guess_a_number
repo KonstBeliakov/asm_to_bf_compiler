@@ -1,0 +1,15 @@
+out_string Enter_your_guess
+set number 155
+set not_win 1
+while not_win
+    input_number guess
+    lt t guess number
+    if t
+        out_string Number_is_bigger
+    gt t guess number
+    if t
+        out_string Number_is_smaller
+    eq t guess number
+    if t
+        out_string You_guessed_correctly!
+        set not_win 0

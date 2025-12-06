@@ -281,8 +281,12 @@ def test_input_number():
     code = '''
     input_number a
     out a
+    input_number a
+    out a
+    input_number a
+    out a
     '''
-    _test(code, [123], input_string='123\n')
+    _test(code, [123, 97, 0], input_string='123\n97\n0\n')
 
 if __name__ == "__main__":
     # set, add, sub, out

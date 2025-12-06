@@ -63,12 +63,11 @@ def run_brainfuck(code: str, inp: str = "", cells: int = 30000, live_run=False) 
         elif cmd == '-':
             tape[ptr] = (tape[ptr] - 1) & 0xFF
         elif cmd == '.':
-            if input_chars:
+            if live_run:
                 print(chr(tape[ptr]), end='')
             output_chars.append(chr(tape[ptr]))
         elif cmd == ',':
             if live_run:
-                print('AAAA')
                 if not input_chars:
                     input_chars  += input() + '\n'
                 c = input_chars[0]
